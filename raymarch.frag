@@ -39,23 +39,30 @@ float boxSDF(vec3 p, vec3 b) {
     return length(max(d,0.0)) + min(max(d.x,max(d.y,d.z)),0.0);
 }
 
+float displacement(vec3 p) {
+    return sin(20.*(p.x + iTime*0.01))*sin(20.*(p.y + iTime*0.02))*sin(20.*(p.z + iTime*0.03))*0.01;
+}
+
 float sceneSDF(vec3 samplePoint) {
-    float sphereDist = sphereSDF(samplePoint, 1.2 + sin(iTime)*0.2);
-    float cubeDist = boxSDF(samplePoint, vec3(1.,1.,1.));
+    vec3 c = vec3(5.,0.,5.);
+    vec3 q = mod(samplePoint,c)-0.5*c;
+    
+    float sphereDist = sphereSDF(q, 1.2 + sin(iTime)*0.2);
+    float cubeDist = boxSDF(q, vec3(1.,1.,1.));
     float orbiterSpeed = 0.2;
     float orbiterSize = 0.25;
-    float orbiter1 = sphereSDF(samplePoint + vec3(sin(iTime*orbiterSpeed)*2., 0., cos(iTime*orbiterSpeed)*2.), orbiterSize);
-    float orbiter2 = sphereSDF(samplePoint + vec3(sin(iTime*orbiterSpeed+0.5*PI)*2., 0., cos(iTime*orbiterSpeed+0.5*PI)*2.), orbiterSize);
-    float orbiter3 = sphereSDF(samplePoint + vec3(sin(iTime*orbiterSpeed+PI)*2., 0., cos(iTime*orbiterSpeed+PI)*2.), orbiterSize);
-    float orbiter4 = sphereSDF(samplePoint + vec3(sin(iTime*orbiterSpeed+1.5*PI)*2., 0., cos(iTime*orbiterSpeed+1.5*PI)*2.), orbiterSize);
+    float orbiter1 = sphereSDF(q + vec3(sin(iTime*orbiterSpeed)*2., 0., cos(iTime*orbiterSpeed)*2.), orbiterSize);
+    float orbiter2 = sphereSDF(q + vec3(sin(iTime*orbiterSpeed+0.5*PI)*2., 0., cos(iTime*orbiterSpeed+0.5*PI)*2.), orbiterSize);
+    float orbiter3 = sphereSDF(q + vec3(sin(iTime*orbiterSpeed+PI)*2., 0., cos(iTime*orbiterSpeed+PI)*2.), orbiterSize);
+    float orbiter4 = sphereSDF(q + vec3(sin(iTime*orbiterSpeed+1.5*PI)*2., 0., cos(iTime*orbiterSpeed+1.5*PI)*2.), orbiterSize);
 
-    float orbiter5 = sphereSDF(samplePoint + vec3(sin(-1.*iTime*orbiterSpeed)*2., 0., cos(-1.*iTime*orbiterSpeed)*2.), orbiterSize);
-    float orbiter6 = sphereSDF(samplePoint + vec3(sin(-1.*iTime*orbiterSpeed+0.5*PI)*2., 0., cos(-1.*iTime*orbiterSpeed+0.5*PI)*2.), orbiterSize);
-    float orbiter7 = sphereSDF(samplePoint + vec3(sin(-1.*iTime*orbiterSpeed+PI)*2., 0., cos(-1.*iTime*orbiterSpeed+PI)*2.), orbiterSize);
-    float orbiter8 = sphereSDF(samplePoint + vec3(sin(-1.*iTime*orbiterSpeed+1.5*PI)*2., 0., cos(-1.*iTime*orbiterSpeed+1.5*PI)*2.), orbiterSize);
+    float orbiter5 = sphereSDF(q + vec3(sin(-1.*iTime*orbiterSpeed)*2., 0., cos(-1.*iTime*orbiterSpeed)*2.), orbiterSize);
+    float orbiter6 = sphereSDF(q + vec3(sin(-1.*iTime*orbiterSpeed+0.5*PI)*2., 0., cos(-1.*iTime*orbiterSpeed+0.5*PI)*2.), orbiterSize);
+    float orbiter7 = sphereSDF(q + vec3(sin(-1.*iTime*orbiterSpeed+PI)*2., 0., cos(-1.*iTime*orbiterSpeed+PI)*2.), orbiterSize);
+    float orbiter8 = sphereSDF(q + vec3(sin(-1.*iTime*orbiterSpeed+1.5*PI)*2., 0., cos(-1.*iTime*orbiterSpeed+1.5*PI)*2.), orbiterSize);
 
     float orbiters = unionSDF(orbiter1,unionSDF(orbiter2,unionSDF(orbiter3,unionSDF(orbiter4,unionSDF(orbiter5,unionSDF(orbiter6,unionSDF(orbiter7,orbiter8)))))));
-    return unionSDF(unionSDF(cubeDist, sphereDist), orbiters);
+    return unionSDF(unionSDF(cubeDist, sphereDist), orbiters) + displacement(samplePoint);
 }
 
 /**
@@ -124,7 +131,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 rd = rayDirection(90.0, iResolution.xy, fragCoord);
     vec3 ro = vec3(camDist * sin(theta), 2., camDist * cos(theta));
     
-    mat3 viewToWorld = viewMatrix(ro, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+    mat3 viewToWorld = viewMatrix(ro, vec3(0., 0., 0.), vec3(0.0, 1.0, 0.0));
     
     rd = viewToWorld * rd;
     
@@ -156,7 +163,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     vec3 ref = reflect(-ld, surfNormal); 
     vec3 sceneColor = vec3(0.0);
-    vec3 objColor = vec3(0.7, 1.0, 0.3);
+    vec3 objColor = vec3(0.7, 0.3, 1.0);
     
     float ambient = .1; //The object's ambient property. You can also have a global and light ambient property, but we'll try to keep things simple.
 	float specularPower = 16.0; // The power of the specularity. Higher numbers can give the object a harder, shinier look.
